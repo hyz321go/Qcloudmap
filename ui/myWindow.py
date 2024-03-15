@@ -31,6 +31,8 @@ class Ui_MainWindow(object):
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 23))
         self.menubar.setObjectName("menubar")
+        self.menuOpen = QtWidgets.QMenu(self.menubar)
+        self.menuOpen.setObjectName("menuOpen")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -41,6 +43,18 @@ class Ui_MainWindow(object):
         self.dockWidgetContents.setObjectName("dockWidgetContents")
         self.dockWidget.setWidget(self.dockWidgetContents)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dockWidget)
+        self.toolBar = QtWidgets.QToolBar(MainWindow)
+        self.toolBar.setObjectName("toolBar")
+        MainWindow.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
+        self.actionOpenShp = QtWidgets.QAction(MainWindow)
+        self.actionOpenShp.setObjectName("actionOpenShp")
+        self.actionOpenRaster = QtWidgets.QAction(MainWindow)
+        self.actionOpenRaster.setObjectName("actionOpenRaster")
+        self.menuOpen.addAction(self.actionOpenShp)
+        self.menuOpen.addAction(self.actionOpenRaster)
+        self.menubar.addAction(self.menuOpen.menuAction())
+        self.toolBar.addAction(self.actionOpenShp)
+        self.toolBar.addAction(self.actionOpenRaster)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -48,4 +62,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.menuOpen.setTitle(_translate("MainWindow", "打开"))
+        self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))
+        self.actionOpenShp.setText(_translate("MainWindow", "打开矢量"))
+        self.actionOpenRaster.setText(_translate("MainWindow", "打开栅格"))
 import myRc_rc
