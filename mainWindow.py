@@ -4,6 +4,7 @@ from qgis.gui import QgsLayerTreeView,QgsMapCanvas,QgsLayerTreeMapCanvasBridge
 from ui.myWindow import Ui_MainWindow
 from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout
 PROJECT = QgsProject.instance()
+from qgisUtils import addMapLayer,readVectorFile,readRasterFile
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -29,3 +30,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.layerTreeView.setModel(self.model)
         # 4 建立图层树与地图画布的桥接
         self.layerTreeBridge = QgsLayerTreeMapCanvasBridge(PROJECT.layerTreeRoot(),self.mapCanvas,self)
+        # 5 初始加载影像
+        self.firstAdd = True
+
+    def addRasterLayer(self,rasterFilePath):
+        rasterLayer = readRasterFile(rasterFilePath)
+        if self.firstAdd:
+            addMapLayer(rasterLayer,self.mapCanvas,True)
+            self.firstAdd = False
+        else:
+            addMapLayer(rasterLayer,self.mapCanvas)
+
+    def addVectorLayer(self, vectorFilePath):
+        vectorLayer = readVectorFile(vectorFilePath)
+        if self.firstAdd:
+            addMapLayer(vectorLayer, self.mapCanvas, True)
+            self.firstAdd = False
+        else:
+            addMapLayer(vectorLayer, self.mapCanvas)
