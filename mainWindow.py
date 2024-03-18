@@ -2,7 +2,7 @@ from qgis.PyQt.QtWidgets import QMainWindow
 from qgis.core import QgsProject,QgsLayerTreeModel
 from qgis.gui import QgsLayerTreeView,QgsMapCanvas,QgsLayerTreeMapCanvasBridge
 from ui.myWindow import Ui_MainWindow
-from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QFileDialog
 PROJECT = QgsProject.instance()
 from qgisUtils import addMapLayer,readVectorFile,readRasterFile
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -32,6 +32,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.layerTreeBridge = QgsLayerTreeMapCanvasBridge(PROJECT.layerTreeRoot(),self.mapCanvas,self)
         # 5 初始加载影像
         self.firstAdd = True
+
+        # A 按钮、菜单栏功能
+        self.connectFunc()
+
+    def connectFunc(self):
+        self.actionOpenRaster.triggered.connect(self.actionOpenRasterTriggered)
+        self.actionOpenShp.triggered.connect(self.actionOpenShpTriggered)
+
+    def actionOpenRasterTriggered(self):
+        data_file, ext = QFileDialog.getOpenFileName(self, '打开', '','GeoTiff(*.tif;*tiff;*TIF;*TIFF);;All Files(*);;JPEG(*.jpg;*.jpeg;*.JPG;*.JPEG);;*.png;;*.pdf')
+        if data_file:
+            self.addRasterLayer(data_file)
+
+    def actionOpenShpTriggered(self):
+        data_file, ext = QFileDialog.getOpenFileName(self, '打开', '',"ShapeFile(*.shp);;All Files(*);;Other(*.gpkg;*.geojson;*.kml)")
+        if data_file:
+            self.addVectorLayer(data_file)
 
     def addRasterLayer(self,rasterFilePath):
         rasterLayer = readRasterFile(rasterFilePath)
