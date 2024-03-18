@@ -1,8 +1,8 @@
-from qgis.PyQt.QtWidgets import QMainWindow
 from qgis.core import QgsProject,QgsLayerTreeModel
 from qgis.gui import QgsLayerTreeView,QgsMapCanvas,QgsLayerTreeMapCanvasBridge
+from PyQt5.QtCore import QUrl,QSize,QMimeData,QUrl
 from ui.myWindow import Ui_MainWindow
-from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QFileDialog
+from PyQt5.QtWidgets import QMainWindow,QVBoxLayout,QHBoxLayout,QFileDialog,QMessageBox
 PROJECT = QgsProject.instance()
 from qgisUtils import addMapLayer,readVectorFile,readRasterFile
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -32,13 +32,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.layerTreeBridge = QgsLayerTreeMapCanvasBridge(PROJECT.layerTreeRoot(),self.mapCanvas,self)
         # 5 初始加载影像
         self.firstAdd = True
-
+        # 6 允许拖拽文件
+        self.setAcceptDrops(True)
         # A 按钮、菜单栏功能
         self.connectFunc()
 
     def connectFunc(self):
         self.actionOpenRaster.triggered.connect(self.actionOpenRasterTriggered)
         self.actionOpenShp.triggered.connect(self.actionOpenShpTriggered)
+
+    def dragEnterEvent(self, fileData):
+        if fileData.mimeData().hasUrls():
+            fileData.accept()
+        else:
+            fileData.ignore()
+
+    # 拖拽文件事件
+    def dropEvent(self,fileData):
+        mimeData: QMimeData = fileData.mimeData()
+        filePathList = [u.path()[1:] for u in mimeData.urls()]
+        for filePath in filePathList:
+            filePath:str = filePath.replace("/","//")
+            if filePath.split(".")[-1] in ["tif","TIF","tiff","TIFF","GTIFF","png","jpg","pdf"]:
+                self.addRasterLayer(filePath)
+            elif filePath.split(".")[-1] in ["shp","SHP","gpkg","geojson","kml"]:
+                self.addVectorLayer(filePath)
+            elif filePath == "":
+                pass
+            else:
+                QMessageBox.about(self, '警告', f'{filePath}为不支持的文件类型，目前支持栅格影像和shp矢量')
 
     def actionOpenRasterTriggered(self):
         data_file, ext = QFileDialog.getOpenFileName(self, '打开', '','GeoTiff(*.tif;*tiff;*TIF;*TIFF);;All Files(*);;JPEG(*.jpg;*.jpeg;*.JPG;*.JPEG);;*.png;;*.pdf')
