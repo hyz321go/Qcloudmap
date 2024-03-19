@@ -71,7 +71,14 @@ class menuProvider(QgsLayerTreeViewMenuProvider):
                     actionDeleteGroup.triggered.connect(lambda: self.deleteGroup(group))  # 将动作与删除组的函数连接
                     menu.addAction(actionDeleteGroup)  # 将动作添加到菜单中
                 elif QgsLayerTree.isLayer(node):  # 如果当前节点是一个图层
-                    pass  # 不做任何操作
+                    # 创建将图层移动到顶部的动作
+                    self.actionMoveToTop = self.actions.actionMoveToTop(menu)
+                    # 将动作添加到右键菜单中
+                    menu.addAction(self.actionMoveToTop)
+                    # 创建将地图缩放至图层范围的动作
+                    self.actionZoomToLayer = self.actions.actionZoomToLayer(self.mapCanvas, menu)
+                    # 将动作添加到右键菜单中
+                    menu.addAction(self.actionZoomToLayer)
                 return menu  # 返回创建的菜单对象
 
         except:
