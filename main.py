@@ -3,11 +3,13 @@ from qgis.PyQt import QtCore
 # 导入QGS应用程序接口
 from qgis.core import QgsApplication
 # 从PyQt5.QtCore导入Qt模块
+# noinspection PyUnresolvedReferences
 from PyQt5.QtCore import Qt
 import os
 import traceback
 # 导入自定义的MainWindow类
 from mainWindow import MainWindow
+
 # PyQGIS的脚本的入口点，设置QGIS应用程序，并实例化主窗口
 if __name__ == '__main__':
     # 设置QGIS应用程序的前缀路径，这是QGIS安装的位置
@@ -16,6 +18,11 @@ if __name__ == '__main__':
     QgsApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     # 创建一个QGS应用程序实例
     app = QgsApplication([], True)
+
+    # 汉化菜单"Group Select"
+    t = QtCore.QTranslator()
+    t.load(r'.\zh-Hans.qm')
+    app.installTranslator(t)
 
     # 初始化QGIS应用程序的资源
     app.initQgis()
