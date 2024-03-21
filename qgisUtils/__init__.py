@@ -1,2 +1,3 @@
-from .qgisLayerUtils import readRasterFile,readVectorFile,addMapLayer
+from .qgisLayerUtils import readRasterFile,readVectorFile,addMapLayer,getRasterLayerAttrs,getVectorLayerAttrs
 from .qgisMenu import menuProvider
+from .yoyiFile import getFileSize

@@ -1,130 +1,137 @@
-import os  # 导入操作系统模块
-import os.path as osp  # 导入操作系统路径模块并重命名为osp
-from osgeo import gdal  # 导入GDAL库，用于处理地理空间数据
-import traceback  # 导入traceback模块，用于捕获异常并打印堆栈跟踪信息
-from shutil import copyfile  # 导入shutil模块的copyfile函数，用于复制文件
-from PyQt5 import QtWidgets  # 导入QtWidgets模块
-from PyQt5.QtCore import Qt  # 导入Qt模块中的Qt类
-from PyQt5.QtGui import QPalette, QColor  # 导入QtGui模块中的QPalette和QColor类
-from PyQt5.QtWidgets import QMenu, QAction, QFileDialog, QMessageBox, QTableView, QDialog  # 导入QtWidgets模块中的QMenu、QAction、QFileDialog、QMessageBox、QTableView和QDialog类
-from qgis.core import (  # 导入QGIS核心模块
+import os
+import os.path as osp
+from osgeo import gdal  # 导入gdal模块，用于处理地理数据
+import traceback  # 导入traceback模块，用于异常处理
+from shutil import copyfile  # 导入copyfile函数，用于复制文件
+from PyQt5 import QtWidgets  # PyQt5库中的图形用户界面模块
+from PyQt5.QtCore import Qt  # PyQt5库中的核心模块，包含了一些基本的共享功能
+from PyQt5.QtGui import QPalette, QColor  # PyQt5库中的图形模块，用于图形处理
+from PyQt5.QtWidgets import (  # PyQt5库中的窗口部件模块，包含了创建窗口应用的基本功能
+    QMenu, QAction, QFileDialog, QMessageBox, QTableView, QDialog
+)
+from qgis.core import (  # QGIS核心模块，包含了处理地图和图层的功能
     QgsLayerTreeNode, QgsLayerTree, QgsMapLayerType, QgsVectorLayer, QgsProject,
-    QgsVectorFileWriter, QgsWkbTypes, Qgis, QgsFillSymbol, QgsSingleSymbolRenderer, QgsVectorLayerCache,
-    QgsMapLayer, QgsRasterLayer, QgsLayerTreeGroup, QgsLayerTreeLayer
+    QgsVectorFileWriter, QgsWkbTypes, Qgis, QgsFillSymbol, QgsSingleSymbolRenderer,
+    QgsVectorLayerCache, QgsMapLayer, QgsRasterLayer, QgsLayerTreeGroup, QgsLayerTreeLayer
 )
-from qgis.gui import (  # 导入QGIS GUI模块
-    QgsLayerTreeViewMenuProvider, QgsLayerTreeView, QgsLayerTreeViewDefaultActions, QgsMapCanvas,
-    QgsMessageBar, QgsAttributeTableModel, QgsAttributeTableView, QgsAttributeTableFilterModel, QgsGui,
-    QgsAttributeDialog, QgsProjectionSelectionDialog, QgsMultiBandColorRendererWidget
+from qgis.gui import (  # QGIS图形用户界面模块，包含了与图形用户界面相关的类和函数
+    QgsLayerTreeViewMenuProvider, QgsLayerTreeView, QgsLayerTreeViewDefaultActions,
+    QgsMapCanvas, QgsMessageBar, QgsAttributeTableModel, QgsAttributeTableView,
+    QgsAttributeTableFilterModel, QgsGui, QgsAttributeDialog, QgsProjectionSelectionDialog,
+    QgsMultiBandColorRendererWidget
 )
-import traceback  # 导入traceback模块，用于捕获异常并打印堆栈跟踪信息
+import traceback  # 异常处理模块
+from widgetAndDialog import LayerPropWindowWidgeter  # 导入自定义的窗口部件模块
 
-# 获取当前项目
-PROJECT = QgsProject.instance()
+PROJECT = QgsProject.instance()  # 获取QGIS项目实例
 
-# 自定义图层树视图菜单提供者
-class menuProvider(QgsLayerTreeViewMenuProvider):
+class menuProvider(QgsLayerTreeViewMenuProvider):  # 自定义的图层树视图菜单提供器类
     def __init__(self, mainWindow, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # 调用父类的初始化方法
-        self.layerTreeView: QgsLayerTreeView = mainWindow.layerTreeView  # 获取主窗口的图层树视图
-        self.mapCanvas: QgsMapCanvas = mainWindow.mapCanvas  # 获取主窗口的地图画布
-        self.mainWindows = mainWindow  # 保存主窗口的引用
+        super().__init__(*args, **kwargs)
+        self.layerTreeView: QgsLayerTreeView = mainWindow.layerTreeView  # 设置图层树视图
+        self.mapCanvas: QgsMapCanvas = mainWindow.mapCanvas  # 设置地图画布
+        self.mainWindows = mainWindow  # 设置主窗口
 
-    # 创建图层树视图的上下文菜单
     def createContextMenu(self) -> QtWidgets.QMenu:
         try:
-            menu = QMenu()  # 创建一个菜单对象
-            self.actions: QgsLayerTreeViewDefaultActions = self.layerTreeView.defaultActions()  # 获取图层树视图的默认操作
-
-            # 如果没有选中任何图层节点
+            menu = QMenu()  # 创建右键菜单
+            self.actions: QgsLayerTreeViewDefaultActions = self.layerTreeView.defaultActions()  # 获取默认图层树视图动作
             if not self.layerTreeView.currentIndex().isValid():
-                # 提供清除图层、展开所有图层和折叠所有图层的选项
-                actionDeleteAllLayer = QAction('清除图层', menu)  # 创建一个清除图层的动作
-                actionDeleteAllLayer.triggered.connect(lambda: self.deleteAllLayer())  # 将动作与删除所有图层的函数连接
-                menu.addAction(actionDeleteAllLayer)  # 将动作添加到菜单中
+                # 如果当前没有选择的图层节点
+                # 添加清除图层选项
+                actionDeleteAllLayer = QAction('清除图层', menu)
+                actionDeleteAllLayer.triggered.connect(lambda: self.deleteAllLayer())
+                menu.addAction(actionDeleteAllLayer)
 
-                menu.addAction('展开所有图层', self.layerTreeView.expandAllNodes)  # 添加展开所有图层的选项
-                menu.addAction('折叠所有图层', self.layerTreeView.collapseAllNodes)  # 添加折叠所有图层的选项
-                return menu  # 返回创建的菜单对象
+                menu.addAction('展开所有图层', self.layerTreeView.expandAllNodes)  # 添加展开所有图层选项
+                menu.addAction('折叠所有图层', self.layerTreeView.collapseAllNodes)  # 添加折叠所有图层选项
+                return menu
 
-            # 如果选中了多个图层节点
             if len(self.layerTreeView.selectedLayers()) > 1:
-                # 提供添加组和删除选中图层的选项
-                self.actionGroupSelected = self.actions.actionGroupSelected()  # 获取选中图层的分组操作
-                menu.addAction(self.actionGroupSelected)  # 将分组操作添加到菜单中
+                # 如果选择了多个图层
+                # 添加组选项
+                self.actionGroupSelected = self.actions.actionGroupSelected()
+                menu.addAction(self.actionGroupSelected)
 
-                actionDeleteSelectedLayers = QAction('删除选中图层', menu)  # 创建一个删除选中图层的动作
-                actionDeleteSelectedLayers.triggered.connect(self.deleteSelectedLayer)  # 将动作与删除选中图层的函数连接
-                menu.addAction(actionDeleteSelectedLayers)  # 将动作添加到菜单中
+                actionDeleteSelectedLayers = QAction('删除选中图层', menu)
+                actionDeleteSelectedLayers.triggered.connect(self.deleteSelectedLayer)
+                menu.addAction(actionDeleteSelectedLayers)  # 添加删除选中图层选项
 
-                return menu  # 返回创建的菜单对象
+                return menu
 
-            # 如果选中了单个图层节点
-            node: QgsLayerTreeNode = self.layerTreeView.currentNode()  # 获取当前选中的节点
+            node: QgsLayerTreeNode = self.layerTreeView.currentNode()  # 获取当前节点
             if node:
-                if QgsLayerTree.isGroup(node):  # 如果当前节点是一个组
-                    # 提供重命名组和删除组的选项
-                    group: QgsLayerTreeGroup = self.layerTreeView.currentGroupNode()  # 获取当前组节点
-                    self.actionRenameGroup = self.actions.actionRenameGroupOrLayer(menu)  # 获取重命名组的操作
-                    menu.addAction(self.actionRenameGroup)  # 将重命名组的操作添加到菜单中
-                    actionDeleteGroup = QAction('删除组', menu)  # 创建一个删除组的动作
-                    actionDeleteGroup.triggered.connect(lambda: self.deleteGroup(group))  # 将动作与删除组的函数连接
-                    menu.addAction(actionDeleteGroup)  # 将动作添加到菜单中
-                elif QgsLayerTree.isLayer(node):  # 如果当前节点是一个图层
-                    # 创建将图层移动到顶部的动作
-                    self.actionMoveToTop = self.actions.actionMoveToTop(menu)
-                    # 将动作添加到右键菜单中
+                if QgsLayerTree.isGroup(node):
+                    # 如果当前节点是组节点
+                    group: QgsLayerTreeGroup = self.layerTreeView.currentGroupNode()
+                    self.actionRenameGroup = self.actions.actionRenameGroupOrLayer(menu)  # 重命名组
+                    menu.addAction(self.actionRenameGroup)
+                    actionDeleteGroup = QAction('删除组', menu)  # 删除组
+                    actionDeleteGroup.triggered.connect(lambda: self.deleteGroup(group))
+                    menu.addAction(actionDeleteGroup)
+                elif QgsLayerTree.isLayer(node):
+                    # 如果当前节点是图层节点
+                    self.actionMoveToTop = self.actions.actionMoveToTop(menu)  # 移动到顶部
                     menu.addAction(self.actionMoveToTop)
-                    # 创建将地图缩放至图层范围的动作
-                    self.actionZoomToLayer = self.actions.actionZoomToLayer(self.mapCanvas, menu)
-                    # 将动作添加到右键菜单中
+                    self.actionZoomToLayer = self.actions.actionZoomToLayer(self.mapCanvas, menu)  # 缩放到图层
                     menu.addAction(self.actionZoomToLayer)
-                return menu  # 返回创建的菜单对象
+
+                    layer: QgsMapLayer = self.layerTreeView.currentLayer()  # 获取当前图层
+
+                    actionOpenLayerProp = QAction('图层属性', menu)
+                    actionOpenLayerProp.triggered.connect(lambda: self.openLayerPropTriggered(layer))  # 打开图层属性
+                    menu.addAction(actionOpenLayerProp)
+
+                    actionDeleteLayer = QAction("删除图层", menu)
+                    actionDeleteLayer.triggered.connect(lambda: self.deleteLayer(layer))  # 删除图层
+                    menu.addAction(actionDeleteLayer)
+
+                return menu
 
         except:
-            print(traceback.format_exc())  # 捕获异常并打印堆栈跟踪信息
+            print(traceback.format_exc())
 
-    # 更新栅格图层的渲染器
+    def openLayerPropTriggered(self, layer):
+        try:
+            self.lp = LayerPropWindowWidgeter(layer, self.mainWindows)  # 打开图层属性窗口
+            print(type(self.lp))
+            self.lp.show()
+        except:
+            print(traceback.format_exc())
+
     def updateRasterLayerRenderer(self, widget, layer):
-        print("change")  # 打印调试信息
-        layer.setRenderer(widget.renderer())  # 设置图层的渲染器
-        self.mapCanvas.refresh()  # 刷新地图画布
+        # 更新栅格图层的渲染器
+        print("change")
+        layer.setRenderer(widget.renderer())
+        self.mapCanvas.refresh()
 
-    # 删除选中图层
     def deleteSelectedLayer(self):
-        deleteRes = QMessageBox.question(self.mainWindows, '信息', "确定要删除所选图层？",
-                                         QMessageBox.Yes | QMessageBox.No,  # 提示用户确认是否删除选中图层
-                                         QMessageBox.No)
-        if deleteRes == QMessageBox.Yes:  # 如果用户确认要删除选中图层
-            layers = self.layerTreeView.selectedLayers()  # 获取选中的图层列表
-            for layer in layers:  # 遍历选中的图层
+        deleteRes = QMessageBox.question(self.mainWindows, '信息', "确定要删除所选图层？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)  # 提示用户确认是否删除选定的图层
+        if deleteRes == QMessageBox.Yes:  # 如果用户确认要删除所选图层
+            layers = self.layerTreeView.selectedLayers()  # 获取所选图层
+            for layer in layers:
                 self.deleteLayer(layer)  # 调用删除图层的函数
 
-    # 删除所有图层
     def deleteAllLayer(self):
-        if len(PROJECT.mapLayers().values()) == 0:  # 如果项目中没有图层
-            QMessageBox.about(None, '信息', '您的图层为空')  # 显示消息框提示图层为空
+        if len(PROJECT.mapLayers().values()) == 0:  # 如果地图层为空
+            QMessageBox.about(None, '信息', '您的图层为空')  # 提示图层为空
         else:
-            deleteRes = QMessageBox.question(self.mainWindows, '信息', "确定要删除所有图层？",
-                                             QMessageBox.Yes | QMessageBox.No,
-                                             QMessageBox.No)  # 提示用户确认是否删除所有图层
+            deleteRes = QMessageBox.question(self.mainWindows, '信息', "确定要删除所有图层？", QMessageBox.Yes | QMessageBox.No,
+                                               QMessageBox.No)  # 提示用户确认是否删除所有图层
             if deleteRes == QMessageBox.Yes:  # 如果用户确认要删除所有图层
-                for layer in PROJECT.mapLayers().values():  # 遍历项目中的所有图层
-                    self.deleteLayer(layer)  # 调用删除图层的函数
+                for layer in PROJECT.mapLayers().values():  # 遍历所有地图层
+                        self.deleteLayer(layer)  # 调用删除图层的函数
 
-    # 删除组及其包含的图层
     def deleteGroup(self, group: QgsLayerTreeGroup):
         deleteRes = QMessageBox.question(self.mainWindows, '信息', "确定要删除组？", QMessageBox.Yes | QMessageBox.No,
                                          QMessageBox.No)  # 提示用户确认是否删除组
         if deleteRes == QMessageBox.Yes:  # 如果用户确认要删除组
-            layerTreeLayers = group.findLayers()  # 获取组中的所有图层
-            for layer in layerTreeLayers:  # 遍历组中的所有图层
+            layerTreeLayers  = group.findLayers()  # 查找组中的所有图层
+            for layer in layerTreeLayers:
                 self.deleteLayer(layer.layer())  # 调用删除图层的函数
-            PROJECT.layerTreeRoot().removeChildNode(group)  # 从图层树中移除组节点
+        PROJECT.layerTreeRoot().removeChildNode(group)  # 从图层树中移除组节点
 
-    # 删除图层
     def deleteLayer(self, layer):
         PROJECT.removeMapLayer(layer)  # 从项目中移除图层
         self.mapCanvas.refresh()  # 刷新地图画布
-        return 0  # 返回0表示删除成功
-
+        return 0

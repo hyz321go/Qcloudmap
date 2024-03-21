@@ -1,45 +1,30 @@
-# 从qgis.PyQt导入所需的模块
-from qgis.PyQt import QtCore
-# 导入QGS应用程序接口
-from qgis.core import QgsApplication
-# 从PyQt5.QtCore导入Qt模块
-# noinspection PyUnresolvedReferences
-from PyQt5.QtCore import Qt
-import os
-import traceback
-# 导入自定义的MainWindow类
-from mainWindow import MainWindow
+from qgis.PyQt import QtCore  # 导入 QtCore 模块，用于处理事件和信号
+from qgis.core import QgsApplication  # 导入 QgsApplication 类，用于管理 QGIS 应用程序
+from PyQt5.QtCore import Qt  # 导入 Qt 模块，用于设置应用程序的属性
+import os  # 导入 os 模块，用于操作文件系统路径
+import traceback  # 导入 traceback 模块，用于捕获和打印异常信息
+from mainWindow import MainWindow  # 导入自定义的 MainWindow 类，用于创建应用程序的主窗口
 
-# PyQGIS的脚本的入口点，设置QGIS应用程序，并实例化主窗口
 if __name__ == '__main__':
-    # 设置QGIS应用程序的前缀路径，这是QGIS安装的位置
-    QgsApplication.setPrefixPath('C:/qgis322/apps/qgis-ltr', True)
-    # 启用高DPI缩放，用于支持高DPI的屏幕
-    QgsApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-    # 创建一个QGS应用程序实例
-    app = QgsApplication([], True)
+    QgsApplication.setPrefixPath('C:/qgis322/apps/qgis-ltr', True)  # 设置 QGIS 应用程序的安装路径
+    QgsApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # 启用高 DPI 缩放功能，确保在高分辨率屏幕上显示正确
+    app = QgsApplication([], True)  # 创建 QgsApplication 实例对象，参数表示不使用图形界面
 
-    # 汉化菜单"Group Select"
-    t = QtCore.QTranslator()
-    t.load(r'.\zh-Hans.qm')
-    app.installTranslator(t)
+    t = QtCore.QTranslator()  # 创建翻译器对象
+    t.load(r'.\zh-Hans.qm')  # 加载中文翻译文件
+    app.installTranslator(t)  # 安装翻译器，用于国际化界面
 
-    # 初始化QGIS应用程序的资源
-    app.initQgis()
+    app.initQgis()  # 初始化 QGIS 应用程序，包括加载插件、设置环境变量等
 
-    # 创建主窗口实例
-    mainWindow = MainWindow()
-    # 显示主窗口
-    mainWindow.show()
-    # 下面是加载栅格层和矢量层的示例代码，当前被注释掉了
-    # tif = r"G:\QGIS\myData\ca_nrc_CGG2013an83.tif"
-    # mainWindow.addRasterLayer(tif)
+    mainWindow = MainWindow()  # 创建主窗口对象
+    mainWindow.show()  # 显示主窗口
 
-    # 加载一个矢量层，路径根据实际文件位置填写
-    shp = r"G:\QGIS\myData\naturalearth_lowres.shp"
-    mainWindow.addVectorLayer(shp)
+    # 以下是添加图层的示例代码，被注释掉了
+    # shp = r"D:\111.shp"
+    # tif = r"D:\test.tif"
+    # mainWindow.addVectorLayer(shp)  # 添加矢量图层
+    # mainWindow.addRasterLayer(tif)  # 添加栅格图层
 
-    # 运行QGS应用程序
-    app.exec_()
-    # 退出时清理QGIS应用程序的资源
-    app.exitQgis()
+    app.exec_()  # 执行应用程序的事件循环，使程序进入消息循环状态，等待用户操作
+
+    app.exitQgis()  # 退出 QGIS 应用程序，释放资源并关闭应用程序
