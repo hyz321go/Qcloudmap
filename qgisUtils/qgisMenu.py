@@ -21,7 +21,7 @@ from qgis.gui import (  # QGIS图形用户界面模块，包含了与图形用�
     QgsMultiBandColorRendererWidget
 )
 import traceback  # 异常处理模块
-from widgetAndDialog import LayerPropWindowWidgeter  # 导入自定义的窗口部件模块
+from widgetAndDialog import LayerPropWindowWidgeter,AttributeDialog  # 导入自定义的窗口部件模块
 
 PROJECT = QgsProject.instance()  # 获取QGIS项目实例
 
@@ -78,6 +78,15 @@ class menuProvider(QgsLayerTreeViewMenuProvider):  # 自定义的图层树视图
 
                     layer: QgsMapLayer = self.layerTreeView.currentLayer()  # 获取当前图层
 
+                    # 判断图层的类型是否为矢量图层
+                    if layer.type() == QgsMapLayerType.VectorLayer:
+                        # 创建一个操作项，设置其文本为'打开属性表'
+                        actionOpenAttributeDialog = QAction('打开属性表', menu)
+                        # 给创建的行为绑定触发事件，使用lambda表达式以使得可以将当前层的引用传递给openAttributeDialog函数
+                        actionOpenAttributeDialog.triggered.connect(lambda: self.openAttributeDialog(layer))
+                        # 在菜单中添加该操作项
+                        menu.addAction(actionOpenAttributeDialog)
+
                     actionOpenLayerProp = QAction('图层属性', menu)
                     actionOpenLayerProp.triggered.connect(lambda: self.openLayerPropTriggered(layer))  # 打开图层属性
                     menu.addAction(actionOpenLayerProp)
@@ -90,6 +99,12 @@ class menuProvider(QgsLayerTreeViewMenuProvider):  # 自定义的图层树视图
 
         except:
             print(traceback.format_exc())
+
+    def openAttributeDialog(self, layer):
+        # 创建一个属性对话框实例，传入主窗口实例和当前图层作为参数
+        ad = AttributeDialog(self.mainWindows, layer)
+        # 显示属性对话框
+        ad.show()
 
     def openLayerPropTriggered(self, layer):
         try:
