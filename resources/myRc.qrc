@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="ico">
+    <file>delete.png</file>
+    <file>edit.png</file>
+    <file>select.png</file>
     <file>qgis.ico</file>
   </qresource>
 </RCC>
