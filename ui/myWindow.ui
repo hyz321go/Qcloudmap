@@ -77,6 +77,9 @@
    </attribute>
    <addaction name="actionOpenShp"/>
    <addaction name="actionOpenRaster"/>
+   <addaction name="actionEditShp"/>
+   <addaction name="actionSelectFeature"/>
+   <addaction name="actionDeleteFeature"/>
   </widget>
   <action name="actionOpenShp">
    <property name="text">

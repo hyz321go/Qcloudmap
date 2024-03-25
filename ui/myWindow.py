@@ -79,6 +79,9 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuEdit.menuAction())
         self.toolBar.addAction(self.actionOpenShp)
         self.toolBar.addAction(self.actionOpenRaster)
+        self.toolBar.addAction(self.actionEditShp)
+        self.toolBar.addAction(self.actionSelectFeature)
+        self.toolBar.addAction(self.actionDeleteFeature)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)

@@ -2,13 +2,13 @@ import sys
 import traceback
 # 导入系统模块和错误回溯模块，用于执行系统相关的操作和捕获异常错误。
 
-from qgis.core import QgsProject,QgsLayerTreeModel,QgsCoordinateReferenceSystem,QgsMapSettings
+from qgis.core import QgsProject,QgsLayerTreeModel,QgsCoordinateReferenceSystem,QgsMapSettings,QgsMapLayer,QgsVectorLayer,QgsMapLayerType
 # 导入QGIS核心库，包括项目管理、图层树模型、坐标参考系统和地图设置。
 
-from qgis.gui import QgsLayerTreeView,QgsMapCanvas,QgsLayerTreeMapCanvasBridge
+from qgis.gui import QgsLayerTreeView,QgsMapCanvas,QgsLayerTreeMapCanvasBridge,QgsMapToolIdentifyFeature
 # 导入QGIS图形用户界面库，包括图层树视图、地图画布和图层树与地图画布桥接工具。
 
-from PyQt5.QtCore import QUrl,QSize,QMimeData,QUrl
+from PyQt5.QtCore import QUrl,QSize,QMimeData,QUrl,Qt
 # 导入PyQt5核心模块，用于处理URL、尺寸、MIME数据等。
 
 from ui.myWindow import Ui_MainWindow
@@ -117,7 +117,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # A 按钮、菜单栏功能
         # 连接操作和信号
         self.connectFunc()
-        # 根据定义的方法生成相关功能。
+        # B 初始设置控件
+        self.actionEditShp.setEnabled(False)
+        self.editTempLayer: QgsVectorLayer = None  # 初始编辑图层为None
 
     def connectFunc(self):
         # 定义连接函数，用于连接GUI组件和方法。
@@ -132,6 +134,90 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # action连线到相应的槽函数，以触发对应的功能，如打开栅格数据或矢量数据。
         self.actionOpenRaster.triggered.connect(self.actionOpenRasterTriggered)
         self.actionOpenShp.triggered.connect(self.actionOpenShpTriggered)
+
+        # action edit
+        self.actionSelectFeature.triggered.connect(self.actionSelectFeatureTriggered)
+        self.actionEditShp.triggered.connect(self.actionEditShpTriggered)
+
+        # 单击、双击图层 触发事件
+        self.layerTreeView.clicked.connect(self.layerClicked)
+
+    # 当图层被点击时调用的函数
+    def layerClicked(self):
+        # 获取当前选中的图层
+        curLayer: QgsMapLayer = self.layerTreeView.currentLayer()
+        # 如果当前图层存在，且为QgsVectorLayer类型，且不是只读的，则启用编辑动作
+        if curLayer and type(curLayer) == QgsVectorLayer and not curLayer.readOnly():
+            self.actionEditShp.setEnabled(True)
+        else:
+            # 否则，禁用编辑动作
+            self.actionEditShp.setEnabled(False)
+
+    # 当编辑Shapefile动作被触发时调用的函数
+    def actionEditShpTriggered(self):
+        # 如果编辑动作被选中
+        if self.actionEditShp.isChecked():
+            # 获取当前选中的图层，并赋值给临时编辑图层变量
+            self.editTempLayer: QgsVectorLayer = self.layerTreeView.currentLayer()
+            # 开始编辑当前图层
+            self.editTempLayer.startEditing()
+        else:
+            # 如果编辑动作没有被选中，弹出消息框询问用户是否保存编辑
+            saveShpEdit = QMessageBox.question(self, '保存编辑', "确定要将编辑内容保存到内存吗？",
+                                               QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            # 如果用户选择是，则提交编辑内容
+            if saveShpEdit == QMessageBox.Yes:
+                self.editTempLayer.commitChanges()
+            else:
+                # 如果用户选择否，则回滚编辑内容
+                self.editTempLayer.rollBack()
+
+            # 刷新地图画布显示最新的图层状态
+            self.mapCanvas.refresh()
+            # 清空临时编辑图层变量
+            self.editTempLayer = None
+
+    # 定义selectToolIdentified函数，当特定要素被识别时调用
+    def selectToolIdentified(self, feature):
+        # 打印被识别要素的ID
+        print(feature.id())
+        # 获取当前图层
+        layerTemp: QgsVectorLayer = self.layerTreeView.currentLayer()
+        # 检查当前图层是否为矢量图层
+        if layerTemp.type() == QgsMapLayerType.VectorLayer:
+            # 如果要素已经被选中，则取消选中
+            if feature.id() in layerTemp.selectedFeatureIds():
+                layerTemp.deselect(feature.id())
+            # 否则，移除所有选中的要素并选中当前要素
+            else:
+                layerTemp.removeSelection()
+                layerTemp.select(feature.id())
+
+    # 定义actionSelectFeatureTriggered函数，当选择要素动作被触发时调用
+    def actionSelectFeatureTriggered(self):
+        # 检查选择要素动作是否被激活
+        if self.actionSelectFeature.isChecked():
+            # 如果当前有激活的地图工具，则取消激活
+            if self.mapCanvas.mapTool():
+                self.mapCanvas.unsetMapTool(self.mapCanvas.mapTool())
+            # 创建一个QgsMapToolIdentifyFeature对象
+            self.selectTool = QgsMapToolIdentifyFeature(self.mapCanvas)
+            # 设置鼠标光标为箭头
+            self.selectTool.setCursor(Qt.ArrowCursor)
+            # 连接featureIdentified信号到selectToolIdentified函数
+            self.selectTool.featureIdentified.connect(self.selectToolIdentified)
+            # 获取地图画布上的图层列表
+            layers = self.mapCanvas.layers()
+            # 如果图层列表不为空，则设置选择工具的当前图层为图层树视图中的当前图层
+            if layers:
+                self.selectTool.setLayer(self.layerTreeView.currentLayer())
+            # 设置地图画布的当前地图工具为selectTool
+            self.mapCanvas.setMapTool(self.selectTool)
+        # 如果选择要素动作没有被激活
+        else:
+            # 如果当前有激活的地图工具，则取消激活
+            if self.mapCanvas.mapTool():
+                self.mapCanvas.unsetMapTool(self.mapCanvas.mapTool())
 
     def showXY(self, point):
         # 定义显示坐标的方法。
