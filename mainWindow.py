@@ -138,9 +138,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # action edit
         self.actionSelectFeature.triggered.connect(self.actionSelectFeatureTriggered)
         self.actionEditShp.triggered.connect(self.actionEditShpTriggered)
+        self.actionDeleteFeature.triggered.connect(self.actionDeleteFeatureTriggered)
 
         # 单击、双击图层 触发事件
         self.layerTreeView.clicked.connect(self.layerClicked)
+
+    # 定义actionDeleteFeatureTriggered函数，当删除要素动作被触发时调用
+    def actionDeleteFeatureTriggered(self):
+        # 如果当前没有处于编辑状态的图层，则弹出信息框提示用户
+        if self.editTempLayer == None:
+            QMessageBox.information(self, '警告', '您没有编辑中的矢量')
+            return  # 提前返回，不执行后续代码
+        # 如果当前编辑图层中没有选中的要素，则弹出信息框提示用户
+        if len(self.editTempLayer.selectedFeatureIds()) == 0:
+            QMessageBox.information(self, '删除选中矢量', '您没有选择任何矢量')
+        else:
+            # 如果有选中的要素，则调用图层的deleteSelectedFeatures方法删除这些要素
+            self.editTempLayer.deleteSelectedFeatures()
 
     # 当图层被点击时调用的函数
     def layerClicked(self):
