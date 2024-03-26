@@ -54,6 +54,10 @@
     <addaction name="actionEditShp"/>
     <addaction name="actionSelectFeature"/>
     <addaction name="actionDeleteFeature"/>
+    <addaction name="separator"/>
+    <addaction name="actionPolygon"/>
+    <addaction name="actionRectangle"/>
+    <addaction name="actionCircle"/>
    </widget>
    <addaction name="menuOpen"/>
    <addaction name="menuEdit"/>
@@ -80,6 +84,9 @@
    <addaction name="actionEditShp"/>
    <addaction name="actionSelectFeature"/>
    <addaction name="actionDeleteFeature"/>
+   <addaction name="actionPolygon"/>
+   <addaction name="actionRectangle"/>
+   <addaction name="actionCircle"/>
   </widget>
   <action name="actionOpenShp">
    <property name="text">
@@ -125,6 +132,33 @@
    </property>
    <property name="text">
     <string>删除选中要素</string>
+   </property>
+  </action>
+  <action name="actionPolygon">
+   <property name="icon">
+    <iconset resource="../resources/myRc.qrc">
+     <normaloff>:/ico/edit_polygon.png</normaloff>:/ico/edit_polygon.png</iconset>
+   </property>
+   <property name="text">
+    <string>绘制面</string>
+   </property>
+  </action>
+  <action name="actionRectangle">
+   <property name="icon">
+    <iconset resource="../resources/myRc.qrc">
+     <normaloff>:/ico/edit_rectangle.png</normaloff>:/ico/edit_rectangle.png</iconset>
+   </property>
+   <property name="text">
+    <string>绘制矩形</string>
+   </property>
+  </action>
+  <action name="actionCircle">
+   <property name="icon">
+    <iconset resource="../resources/myRc.qrc">
+     <normaloff>:/ico/edit_circle.png</normaloff>:/ico/edit_circle.png</iconset>
+   </property>
+   <property name="text">
+    <string>绘制圆</string>
    </property>
   </action>
  </widget>
