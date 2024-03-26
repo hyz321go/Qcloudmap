@@ -17,7 +17,7 @@ from ui.myWindow import Ui_MainWindow
 from PyQt5.QtWidgets import QMainWindow,QVBoxLayout,QHBoxLayout,QFileDialog,QMessageBox,QStatusBar,QLabel,QComboBox
 # 导入PyQt5控件模块，包括主窗口、垂直和水平布局、文件对话框、消息盒子、状态栏、标签、组合框等控件。
 
-from qgisUtils import addMapLayer,readVectorFile,readRasterFile,menuProvider
+from qgisUtils import addMapLayer,readVectorFile,readRasterFile,menuProvider,PolygonMapTool
 # 导入自定义的QGIS工具模块，用于添加地图图层、读取矢量和栅格文件、创建右键菜单提供者。
 
 PROJECT = QgsProject.instance()
@@ -139,7 +139,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionSelectFeature.triggered.connect(self.actionSelectFeatureTriggered)
         self.actionEditShp.triggered.connect(self.actionEditShpTriggered)
         self.actionDeleteFeature.triggered.connect(self.actionDeleteFeatureTriggered)
-
+        self.actionPolygon.triggered.connect(self.actionPolygonTriggered)
         # 单击、双击图层 触发事件
         self.layerTreeView.clicked.connect(self.layerClicked)
 
@@ -338,3 +338,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             addMapLayer(vectorLayer, self.mapCanvas)
             # 根据是否是第一次添加图层来执行不同的操作。
+
+    # 定义当触发多边形动作时执行的函数。
+    def actionPolygonTriggered(self):
+        # 如果当前编辑层为None，说明没有被选中的矢量层进行编辑。
+        if self.editTempLayer == None:
+            # 使用QMessageBox弹出信息框提示用户，需要有一个正在编辑的矢量层。
+            QMessageBox.information(self, '警告', '您没有编辑中的矢量')
+            return  # 返回，不继续执行后续代码。
+        # 检查当前地图画布（mapCanvas）上是否有激活的地图工具。
+        if self.mapCanvas.mapTool():
+            # 如果有，则调用该工具的deactivate方法来停用它。
+            self.mapCanvas.mapTool().deactivate()
+        # 创建一个多边形工具实例（PolygonMapTool），用于在地图上绘制多边形。
+        # 它需要地图画布对象、正在编辑的临时图层对象和主窗口对象作为参数。
+        self.polygonTool = PolygonMapTool(self.mapCanvas, self.editTempLayer, self)
+        # 将当前的地图工具设置为这个新创建的多边形工具。
+        self.mapCanvas.setMapTool(self.polygonTool)
